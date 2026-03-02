@@ -7,36 +7,39 @@ console.log('🔥 DEBUG: CodeShield content script is loading!');
 
 class CodeShieldContent {
   constructor() {
-    this.isScanning = true;
+    this.isScanning = false;  // start false until settings confirm enabled
     this.scanDebounce = 500;
     this.scanTimer = null;
+    this.lastScannedText = new WeakMap();
     this.originalContent = new Map();
     this.redactedContent = new Map();
     this.detectedSecrets = [];
     this.lastScanTime = 0;
+    // Safe defaults so this.settings is NEVER undefined (race condition fix)
+    this.settings = { enabled: true, autoRedact: true, showWarnings: true, scanOnPaste: true };
 
     this.init();
   }
 
-  init() {
+  async init() {
     if (!chrome.runtime || !chrome.runtime.id) {
-      console.warn('⚠️ Extension context invalidated - reloading page');
+      console.warn('⚠️ Extension context invalidated');
       return;
     }
 
-    console.log('🔍 CodeShield Content Script Initialized (Message Passing Mode)');
+    console.log('🔍 CodeShield Content Script Initialized');
 
-    this.loadSettings().then(settings => {
-      this.settings = settings;
-      if (settings.enabled) {
-        this.startScanning();
-      }
-    });
+    // Await settings before anything else — prevents this.settings being undefined
+    this.settings = await this.loadSettings();
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleMessage(message, sendResponse);
       return true;
     });
+
+    if (this.settings.enabled) {
+      this.startScanning();
+    }
 
     this.observePage();
   }
@@ -63,19 +66,31 @@ class CodeShieldContent {
     if (this.scanTimer) clearTimeout(this.scanTimer);
   }
 
+  // Resolves the actual editable root (e.g. walks up from <p> to the contenteditable div)
+  // This is critical for ChatGPT/Gemini where events fire on inner child elements
+  resolveEditableRoot(element) {
+    if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') return element;
+    const contentEditable = element.closest('[contenteditable="true"]');
+    if (contentEditable) return contentEditable;
+    return element;
+  }
+
   handleInput(event) {
-    if (!this.isScanning || !this.settings.scanOnPaste) return;
-    if (this.isCodeElement(event.target)) this.debouncedScan(event.target);
+    if (!this.isScanning) return;
+    const root = this.resolveEditableRoot(event.target);
+    if (this.isCodeElement(root)) this.debouncedScan(root);
   }
 
   handlePaste(event) {
     if (!this.isScanning || !this.settings.scanOnPaste) return;
-    if (this.isCodeElement(event.target)) setTimeout(() => this.debouncedScan(event.target), 100);
+    const root = this.resolveEditableRoot(event.target);
+    if (this.isCodeElement(root)) setTimeout(() => this.debouncedScan(root), 100);
   }
 
   handleKeyUp(event) {
     if (!this.isScanning) return;
-    if (this.isCodeElement(event.target) && event.key === 'Enter') this.debouncedScan(event.target);
+    const root = this.resolveEditableRoot(event.target);
+    if (this.isCodeElement(root)) this.debouncedScan(root);
   }
 
   isCodeElement(element) {
@@ -92,13 +107,14 @@ class CodeShieldContent {
     }, this.scanDebounce);
   }
 
-  async scanElement(element) {
-    if (element.dataset.codeshieldScanned === 'true') return;
-
+  async scanElement(element, force = false) {
     const text = this.getElementText(element);
     if (!text || text.length < 10) return;
 
-    element.dataset.codeshieldScanned = 'true';
+    // Bug #1 Fix: skip only if text hasn't changed since last scan
+    // This allows re-scanning the same element when the user types a new message
+    if (!force && this.lastScannedText.get(element) === text) return;
+    this.lastScannedText.set(element, text);
 
     try {
       const response = await chrome.runtime.sendMessage({
@@ -116,37 +132,72 @@ class CodeShieldContent {
       }
     } catch (error) {
       console.warn("⚠️ CodeShield could not reach the background engine:", error);
-      delete element.dataset.codeshieldScanned;
+      // Clear cached text so next attempt retries
+      this.lastScannedText.delete(element);
     }
   }
 
   getElementText(element) {
     if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') return element.value;
+    // Use innerText for contenteditable — it preserves \n between <p> tags.
+    // textContent merges paragraphs without newlines, causing wrong regex indices.
+    if (element.contentEditable === 'true') return element.innerText || element.textContent;
     return element.textContent || element.innerText;
   }
 
   setElementText(element, text) {
+    // Bug #2 Fix: React apps (ChatGPT, Gemini) ignore direct .value or .textContent changes.
+    // We must use the native prototype setter to trigger React's synthetic event system.
     const wasScanning = this.isScanning;
     this.isScanning = false;
 
     if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-      element.value = text;
+      // Use native setter so React's onChange handler fires correctly
+      const nativeSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype, 'value'
+      )?.set || Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype, 'value'
+      )?.set;
+
+      if (nativeSetter) {
+        nativeSetter.call(element, text);
+      } else {
+        element.value = text; // Fallback for non-React pages
+      }
+
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+
     } else if (element.contentEditable === 'true') {
-      element.textContent = text;
+      // Build HTML matching ChatGPT/Gemini's paragraph-per-line format.
+      // execCommand('insertText') is unreliable on nested contenteditable divs.
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      const html = escaped.split('\n').map(line => `<p>${line || '<br>'}</p>`).join('');
+      element.innerHTML = html;
+      // Dispatch InputEvent so React reads the updated textContent
+      element.dispatchEvent(new InputEvent('input', {
+        bubbles: true, cancelable: true, inputType: 'insertText', data: text
+      }));
     }
 
-    setTimeout(() => { this.isScanning = wasScanning; }, 100);
+    setTimeout(() => { this.isScanning = wasScanning; }, 1000); // 1s lock prevents re-scan loop
   }
 
   handleSecretsFound(element, result) {
     this.detectedSecrets = result.secretsFound;
 
+    // Always redact — don't let the warning throttle block it
+    if (this.settings.autoRedact) this.redactElement(element, result);
+
+    // Only throttle the warning banner (avoid spamming UI)
     const now = Date.now();
     if (now - this.lastScanTime < 2000) return;
     this.lastScanTime = now;
 
     if (this.settings.showWarnings) this.showWarning(element, result);
-    if (this.settings.autoRedact) this.redactElement(element, result);
     this.notifyPopup(result);
   }
 
@@ -225,21 +276,24 @@ class CodeShieldContent {
     }
   }
 
-  // FIXED: Updated query selector to match our input fix
   scanCurrentPage() {
+    // Bug #1 + #3 Fix: force=true bypasses the text-cache check so manual scan always runs
     document.querySelectorAll('textarea, input, [contenteditable="true"]').forEach(element => {
-      this.scanElement(element);
+      this.scanElement(element, true);
     });
   }
 
-  // FIXED: Updated query selector to match our input fix
   observePage() {
     const observer = new MutationObserver((mutations) => {
+      // LOOP FIX: skip observer callbacks while we are writing redacted content
+      if (!this.isScanning) return;
+
       mutations.forEach(mutation => {
         mutation.addedNodes.forEach(node => {
           if (node.nodeType === Node.ELEMENT_NODE) {
-            if (this.isCodeElement(node)) this.scanElement(node);
-            node.querySelectorAll?.('textarea, input, [contenteditable="true"]').forEach(el => this.scanElement(el));
+            // Walk up to the contenteditable root, not the child <p> node
+            const target = this.resolveEditableRoot(node);
+            if (this.isCodeElement(target)) this.debouncedScan(target);
           }
         });
       });

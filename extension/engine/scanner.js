@@ -15,7 +15,9 @@ const SECRET_PATTERNS = {
     label: 'AWS_ACCESS_KEY'
   },
   AWS_SECRET_KEY: {
-    pattern: /\b[0-9a-zA-Z/+]{40,}\b/g,
+    // Requires a keyword prefix (AWS_SECRET, secret_key, etc.) before the 40-char value.
+    // This avoids false positives on normal text while catching real-world key formats.
+    pattern: /(?:aws_secret(?:_access)?_key|secret_access_key|secret_key|aws_secret)\s*[:=\s]\s*["']?([0-9a-zA-Z/+]{40})["']?/gi,
     label: 'AWS_SECRET_KEY'
   },
   OPENAI_API_KEY: {
@@ -50,14 +52,14 @@ const SECRET_PATTERNS = {
     pattern: /(?:password|pwd)\s*[:=]\s*([^\s\n\r"']+)/gi, // Added capture group
     label: 'PASSWORD_ASSIGNMENT'
   },
-  
+
   // 2. NEW: Semantic Context Detection
   SEMANTIC_PASSWORD: {
     // Looks for trigger words, then captures the string inside quotes
     pattern: /(?:password|secret|pwd)[^'"]*['"]([^'"]+)['"]/gi,
     label: 'SEMANTIC_PASSWORD'
   },
-  
+
   // 3. NEW: PII Detection
   PHONE_NUMBER: {
     // Catches international and standard formatted phone numbers
@@ -82,28 +84,28 @@ export function scanWithRegex(rawCode) {
   for (const [type, config] of Object.entries(SECRET_PATTERNS)) {
     let match;
     config.pattern.lastIndex = 0;
-    
+
     while ((match = config.pattern.exec(rawCode)) !== null) {
       // UPGRADE: Check for Capture Group (match[1]) to extract semantic meaning, otherwise use full match
       const matchedValue = match[1] !== undefined ? match[1] : match[0];
-      
+
       // UPGRADE: Calculate the exact starting index so the redactor slices accurately
-      const startIndex = match[1] !== undefined 
-        ? match.index + match[0].indexOf(match[1]) 
+      const startIndex = match[1] !== undefined
+        ? match.index + match[0].indexOf(match[1])
         : match.index;
-      
+
       const detectionKey = `${startIndex}-${matchedValue}`;
-      
+
       if (!seenDetections.has(detectionKey)) {
         seenDetections.add(detectionKey);
-        
+
         detections.push({
           type: config.label,
           value: matchedValue,
           index: startIndex
         });
       }
-      
+
       if (match.index === config.pattern.lastIndex) {
         config.pattern.lastIndex++;
       }

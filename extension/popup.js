@@ -12,24 +12,24 @@ class CodeShieldPopup {
       blockedCount: 0
     };
     this.currentTab = null;
-    
+
     this.init();
   }
 
   async init() {
     console.log('🔍 CodeShield Popup Initialized');
-    
+
     // Load settings and stats
     await this.loadSettings();
     await this.loadStats();
     await this.getCurrentTab();
-    
+
     // Setup event listeners
     this.setupEventListeners();
-    
+
     // Update UI
     this.updateUI();
-    
+
     // Get current page status
     await this.updatePageStatus();
   }
@@ -41,7 +41,7 @@ class CodeShieldPopup {
       showWarnings: true,
       scanOnPaste: true
     };
-    
+
     const result = await chrome.storage.sync.get(defaultSettings);
     this.settings = result;
     this.isScanning = this.settings.enabled;
@@ -49,21 +49,21 @@ class CodeShieldPopup {
 
   async loadStats() {
     const defaultStats = {
-      secretsFound: 0,
+      totalScans: 0,      // matches background.js key
+      secretsBlocked: 0, // matches background.js key
       scansToday: 0,
-      blockedCount: 0,
       lastReset: new Date().toDateString()
     };
-    
+
     const result = await chrome.storage.local.get(defaultStats);
-    
+
     // Reset daily stats if needed
     if (result.lastReset !== new Date().toDateString()) {
       result.scansToday = 0;
       result.lastReset = new Date().toDateString();
       await chrome.storage.local.set(result);
     }
-    
+
     this.stats = result;
   }
 
@@ -118,7 +118,7 @@ class CodeShieldPopup {
     // Update status indicator
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
-    
+
     if (this.isScanning) {
       statusDot.classList.remove('inactive');
       statusText.textContent = 'Active';
@@ -128,9 +128,9 @@ class CodeShieldPopup {
     }
 
     // Update stats
-    document.getElementById('secretsCount').textContent = this.stats.secretsFound;
-    document.getElementById('scansCount').textContent = this.stats.scansToday;
-    document.getElementById('blockedCount').textContent = this.stats.blockedCount;
+    document.getElementById('secretsCount').textContent = this.stats.totalScans || 0;
+    document.getElementById('scansCount').textContent = this.stats.scansToday || 0;
+    document.getElementById('blockedCount').textContent = this.stats.secretsBlocked || 0;
 
     // Update protection level
     this.updateProtectionLevel();
@@ -261,7 +261,7 @@ class CodeShieldPopup {
     try {
       console.log('🔍 Sending scan message to tab:', this.currentTab.id);
       console.log('🔍 Tab URL:', this.currentTab.url);
-      
+
       // First check if content script is loaded
       try {
         const testResponse = await chrome.tabs.sendMessage(this.currentTab.id, {
@@ -282,11 +282,11 @@ class CodeShieldPopup {
       if (response && response.success) {
         // Update stats
         this.stats.scansToday++;
-        await chrome.storage.local.set(this.stats);
+        await chrome.storage.local.set({ scansToday: this.stats.scansToday });
         this.updateUI();
 
         this.showNotification('Scan completed successfully', 'success');
-        
+
         // Refresh page status
         setTimeout(() => {
           this.updatePageStatus();
@@ -299,7 +299,7 @@ class CodeShieldPopup {
     } catch (error) {
       console.error('Scan failed:', error);
       this.showLoading(false);
-      
+
       if (error.message.includes('Could not establish connection')) {
         this.showNotification('Extension not loaded on this page. Refresh the page and try again.', 'error');
       } else {
@@ -315,7 +315,7 @@ class CodeShieldPopup {
       const response = await chrome.tabs.sendMessage(this.currentTab.id, {
         type: 'restoreAll'
       });
-      
+
       if (response && response.success) {
         this.showNotification('All redacted content restored', 'success');
       } else {
@@ -327,7 +327,7 @@ class CodeShieldPopup {
 
     } catch (error) {
       console.error('Restore failed:', error);
-      
+
       if (error.message.includes('Could not establish connection')) {
         this.showNotification('Extension not loaded on this page. Refresh the page and try again.', 'error');
       } else {
@@ -362,18 +362,18 @@ class CodeShieldPopup {
   }
 
   openSettings() {
-  try {
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      // Fallback: open options.html directly
-      chrome.tabs.create({ url: 'options.html' });
+    try {
+      if (chrome.runtime.openOptionsPage) {
+        chrome.runtime.openOptionsPage();
+      } else {
+        // Fallback: open options.html directly
+        chrome.tabs.create({ url: 'options.html' });
+      }
+    } catch (error) {
+      console.error('Failed to open settings:', error);
+      this.showNotification('Settings page unavailable', 'error');
     }
-  } catch (error) {
-    console.error('Failed to open settings:', error);
-    this.showNotification('Settings page unavailable', 'error');
   }
-}
 
   openHelp() {
     chrome.tabs.create({
@@ -415,12 +415,13 @@ class CodeShieldPopup {
 
   handleContentMessage(message, sender, sendResponse) {
     if (message.type === 'secretsDetected') {
-      this.stats.secretsFound += message.data.secretsFound;
-      this.stats.blockedCount++;
-      
-      chrome.storage.local.set(this.stats);
-      this.updateUI();
-      
+      // Read fresh stats from storage (background may have updated them)
+      chrome.storage.local.get(['totalScans', 'secretsBlocked'], (result) => {
+        this.stats.totalScans = result.totalScans || this.stats.totalScans;
+        this.stats.secretsBlocked = result.secretsBlocked || this.stats.secretsBlocked;
+        this.updateUI();
+      });
+
       // Show notification for high-risk detections
       if (message.data.secretsFound > 2) {
         this.showNotification(
@@ -429,7 +430,7 @@ class CodeShieldPopup {
         );
       }
     }
-    
+
     sendResponse({ received: true });
   }
 }

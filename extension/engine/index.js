@@ -15,7 +15,12 @@ function removeDuplicates(detections) {
   const seen = new Set();
   const unique = [];
   for (const detection of detections) {
-    const key = `${detection.type}-${detection.index}-${detection.value}`;
+    // Deduplicate by index+value ONLY (ignore type).
+    // The same token is often found by both regex (e.g. AWS_SECRET_KEY) and entropy
+    // (HIGH_ENTROPY_SECRET) at the exact same index. Keeping both causes redactCode
+    // to replace at the same position twice, corrupting the surrounding text.
+    // Regex results come first in the merged array, so the more specific label wins.
+    const key = `${detection.index}-${detection.value}`;
     if (!seen.has(key)) {
       seen.add(key);
       unique.push(detection);
@@ -48,21 +53,21 @@ export function processCode(rawCode) {
   }
 
   const startTime = performance.now();
-  
+
   try {
     const regexResults = scanWithRegex(rawCode);
     const entropyResults = scanWithEntropy(rawCode);
     const mergedResults = mergeResults(regexResults, entropyResults);
-    
+
     const { redactedCode, mapping } = redactCode(rawCode, mergedResults);
-    
+
     const endTime = performance.now();
     const processingTime = endTime - startTime;
-    
+
     return {
       secretsFound: mergedResults,
-      redactedCode: redactedCode, 
-      mapping: mapping,          
+      redactedCode: redactedCode,
+      mapping: mapping,
       metadata: {
         totalLength: rawCode.length,
         processingTime: Math.round(processingTime * 100) / 100,
@@ -71,7 +76,7 @@ export function processCode(rawCode) {
         entropyMatches: entropyResults.length
       }
     };
-    
+
   } catch (error) {
     console.error('CodeShield processing error:', error);
     return { secretsFound: [], redactedCode: rawCode, mapping: {}, metadata: { totalLength: rawCode.length, processingTime: 0, scanCount: 0, error: error.message } };
@@ -92,13 +97,13 @@ export function getCodeStats(rawCode) {
   const words = rawCode.split(/\s+/).filter(word => word.length > 0);
   const secrets = quickScan(rawCode);
   let risk = 'none';
-  
+
   if (secrets.length > 0) {
     const highRiskTypes = ['AWS_ACCESS_KEY', 'AWS_SECRET_KEY', 'OPENAI_API_KEY', 'PRIVATE_KEY'];
     const hasHighRisk = secrets.some(secret => highRiskTypes.includes(secret.type));
     risk = hasHighRisk ? 'high' : (secrets.length > 3 ? 'medium' : 'low');
   }
-  
+
   return { lineCount: lines.length, characterCount: rawCode.length, wordCount: words.length, estimatedRisk: risk, secretCount: secrets.length };
 }
 

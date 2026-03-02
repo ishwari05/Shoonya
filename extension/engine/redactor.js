@@ -24,32 +24,39 @@ export function redactCode(rawCode, secretsFound) {
     let redactedCode = rawCode;
 
     // 3. CRITICAL: Sort by index DESCENDING (Bottom-to-Top)
-    // If we replace a 20-char secret with an 8-char placeholder at the start,
-    // all subsequent secret indices would become mathematically incorrect.
-    // By starting from the end, the indices at the beginning remain stable.
+    // Replacing from the end keeps all earlier indices stable.
     const sortedSecrets = [...secretsFound].sort((a, b) => b.index - a.index);
+
+    // Track replaced regions so overlapping detections are skipped.
+    // e.g. JWT regex captures the full token at index X; entropy also captures
+    // a segment starting inside that same region — we must skip the second one.
+    const usedRegions = [];
 
     sortedSecrets.forEach(secret => {
         const { type, value, index } = secret;
+        const end = index + value.length;
+
+        // Skip if this detection overlaps any already-replaced region
+        const overlaps = usedRegions.some(r => index < r.end && end > r.start);
+        if (overlaps) return;
+        usedRegions.push({ start: index, end });
+
         let placeholder;
 
-        // 4. Handle Duplicate Secrets
-        // Requirement: Same secret value = Same placeholder name
+        // Handle Duplicate Secrets — same value → same placeholder name
         if (valueToPlaceholder.has(value)) {
             placeholder = valueToPlaceholder.get(value);
         } else {
             typeCounters[type] = (typeCounters[type] || 0) + 1;
             placeholder = `[${type}_${typeCounters[type]}]`;
-            
             valueToPlaceholder.set(value, placeholder);
             mapping[placeholder] = value;
         }
 
-        // 5. Surgical String Slicing
-        // We cut the string at the exact index and "stitch" in the placeholder.
-        redactedCode = 
-            redactedCode.slice(0, index) + 
-            placeholder + 
+        // Surgical String Slicing — replace only the detected secret
+        redactedCode =
+            redactedCode.slice(0, index) +
+            placeholder +
             redactedCode.slice(index + value.length);
     });
 
@@ -65,7 +72,7 @@ export function redactCode(rawCode, secretsFound) {
 // Added 'export' for future use
 export function restoreCode(aiOutput, mapping) {
     let restored = aiOutput;
-    
+
     // Sort placeholders by length DESCENDING.
     // This prevents a bug where "[KEY_1]" might accidentally 
     // partially replace inside "[KEY_10]".
