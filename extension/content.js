@@ -8,7 +8,6 @@ console.log('🔥 DEBUG: CodeShield content script is loading!');
 class CodeShieldContent {
   constructor() {
     this.isScanning = false;  // start false until settings confirm enabled
-    this.scanDebounce = 500;
     this.scanTimer = null;
     this.lastScannedText = new WeakMap();
     this.originalContent = new Map();
@@ -102,9 +101,16 @@ class CodeShieldContent {
     if (!this.isScanning) return;
     if (this.scanTimer) clearTimeout(this.scanTimer);
 
+    // Scale debounce delay with input size so large pastes don't trigger
+    // multiple rapid scans during streaming DOM mutations
+    const textLength = this.getElementText(element)?.length || 0;
+    const delay = textLength > 20_000 ? 2000
+      : textLength > 5_000 ? 1000
+        : 500;
+
     this.scanTimer = setTimeout(() => {
       if (this.isScanning) this.scanElement(element);
-    }, this.scanDebounce);
+    }, delay);
   }
 
   async scanElement(element, force = false) {

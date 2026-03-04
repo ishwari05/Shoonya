@@ -48,10 +48,10 @@ function tokenizeText(text) {
   const tokens = [];
   let currentToken = '';
   let startIndex = 0;
-  
+
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
-    
+
     // Consider whitespace and common punctuation as delimiters
     if (/\s|[.,;:!(){}[\]"'<>]/.test(char)) {
       if (currentToken.length > 0) {
@@ -68,7 +68,7 @@ function tokenizeText(text) {
       currentToken += char;
     }
   }
-  
+
   // Add the last token if exists
   if (currentToken.length > 0) {
     tokens.push({
@@ -76,8 +76,34 @@ function tokenizeText(text) {
       index: startIndex
     });
   }
-  
+
   return tokens;
+}
+
+// UUID pattern — high entropy but never a secret
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Tokens that are entirely hex digits (SHA hashes, serial numbers, etc.)
+const ALL_HEX_PATTERN = /^[0-9a-f]+$/i;
+
+/**
+ * Returns true if the token is a known false-positive source that should
+ * NOT be treated as a high-entropy secret even when the entropy score is high.
+ */
+function isFalsePositive(token) {
+  // UUIDs — perfectly valid high-entropy strings that are never secrets
+  if (UUID_PATTERN.test(token)) return true;
+
+  // Base64 image data URIs embedded as env values (e.g. LOGO=data:image/png;base64,...)
+  if (token.startsWith('data:image/') || token.startsWith('data:application/')) return true;
+
+  // Very long tokens are almost always base64 blobs, not API keys
+  if (token.length > 200) return true;
+
+  // Pure hex strings (SHA-1/256 digests, fingerprints) — no mixed case means low key-space diversity
+  if (ALL_HEX_PATTERN.test(token)) return true;
+
+  return false;
 }
 
 /**
@@ -90,19 +116,24 @@ function isHighEntropySecret(token) {
   if (token.length <= 20) {
     return false;
   }
-  
+
+  // Reject known false-positive patterns before paying the entropy cost
+  if (isFalsePositive(token)) {
+    return false;
+  }
+
   // Calculate entropy
   const entropy = calculateEntropy(token);
-  
+
   // Entropy must be greater than 4.5
   if (entropy <= 4.5) {
     return false;
   }
-  
+
   // Must contain both letters and numbers
   const hasLetters = /[a-zA-Z]/.test(token);
   const hasNumbers = /[0-9]/.test(token);
-  
+
   return hasLetters && hasNumbers;
 }
 
@@ -119,18 +150,18 @@ export function scanWithEntropy(rawCode) {
 
   const detections = [];
   const seenDetections = new Set();
-  
+
   // Tokenize the text
   const tokens = tokenizeText(rawCode);
-  
+
   // Analyze each token for high entropy
   for (const token of tokens) {
     if (isHighEntropySecret(token.value)) {
       const detectionKey = `${token.index}-${token.value}`;
-      
+
       if (!seenDetections.has(detectionKey)) {
         seenDetections.add(detectionKey);
-        
+
         detections.push({
           type: 'HIGH_ENTROPY_SECRET',
           value: token.value,
@@ -139,7 +170,7 @@ export function scanWithEntropy(rawCode) {
       }
     }
   }
-  
+
   return detections;
 }
 
@@ -161,7 +192,7 @@ export function getEntropyStats(text) {
 
   const tokens = tokenizeText(text);
   const entropies = tokens.map(token => calculateEntropy(token.value));
-  
+
   return {
     averageEntropy: entropies.length > 0 ? entropies.reduce((a, b) => a + b, 0) / entropies.length : 0,
     maxEntropy: entropies.length > 0 ? Math.max(...entropies) : 0,
