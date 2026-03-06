@@ -1,6 +1,6 @@
 # 🛡️ CodeShield
 
-**Stop leaking secrets to AI chatbots.**
+**Stop leaking secrets to AI chatbots.** (v2.0.0)
 
 CodeShield is a Chrome extension that silently watches what you type into AI tools like ChatGPT, Claude, and Gemini — and automatically redacts API keys, passwords, and tokens before they ever leave your browser.
 
@@ -14,6 +14,9 @@ No servers. No signups. No nonsense. It all runs locally.
 - **Auto-redacts** them with safe placeholders like `[OPENAI_API_KEY_1]`
 - **Restores** the original text after the AI responds
 - **Works silently** — you'll barely notice it's there until it saves you
+- **Handles large inputs efficiently** with chunked scanning
+- **Smart false-positive guards** to ignore UUIDs and Base64 data URIs
+- **Accurate singular redactions** without duplicate text bugs
 
 ---
 
@@ -89,7 +92,6 @@ CodeShield/
 │       ├── scanner.js      # Regex-based secret detection
 │       ├── entropy.js      # Entropy-based unknown secret detection
 │       └── redactor.js     # Replaces secrets with placeholders
-└── engine/                 # Standalone Node.js version (for testing)
 ```
 
 ---
