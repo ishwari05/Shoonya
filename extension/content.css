@@ -322,8 +322,9 @@
 
 /* Redacted Elements */
 .codeshield-redacted {
-  background: #fff3cd !important;
-  border: 2px solid #ffeaa7 !important;
+  background: rgba(255, 193, 7, 0.25) !important;
+  border: 2px solid rgba(255, 193, 7, 0.6) !important;
+  color: inherit !important;
   border-radius: 4px !important;
   position: relative;
 }
@@ -413,12 +414,5 @@
   .codeshield-secret-value {
     background: #333;
     color: #ccc;
-  }
-
-  .codeshield-redacted {
-    background: rgba(255, 193, 7, 0.15) !important;
-    border: 2px solid rgba(255, 193, 7, 0.4) !important;
-    color: #ffdca8 !important;
-    /* Force high contrast text color */
   }
 }
