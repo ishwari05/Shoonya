@@ -1,0 +1,158 @@
+{
+	"name": "codeshield-security",
+	"displayName": "CodeShield Security",
+	"description": "Protect developers from accidentally exposing secrets while coding, copying, pasting into AI tools, and committing to Git",
+	"version": "1.0.0",
+	"publisher": "codeshield",
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"security",
+		"secrets",
+		"api keys",
+		"tokens",
+		"passwords",
+		"ai safety",
+		"git protection"
+	],
+	"activationEvents": [
+		"onStartupFinished",
+		"onLanguage:javascript",
+		"onLanguage:typescript",
+		"onLanguage:json",
+		"onLanguage:python",
+		"onLanguage:java",
+		"onLanguage:go",
+		"onLanguage:rust",
+		"onLanguage:cpp",
+		"onLanguage:c"
+	],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "codeshield.redactSecrets",
+				"title": "CodeShield: Redact Secrets",
+				"icon": "$(shield)"
+			},
+			{
+				"command": "codeshield.scanDocument",
+				"title": "CodeShield: Scan Document for Secrets",
+				"icon": "$(search)"
+			},
+			{
+				"command": "codeshield.quickRedact",
+				"title": "CodeShield: Quick Redact (No Confirmation)",
+				"icon": "$(zap)"
+			},
+			{
+				"command": "codeshield.ignoreSecret",
+				"title": "CodeShield: Ignore This Secret",
+				"icon": "$(eye-off)"
+			},
+			{
+				"command": "codeshield.addToSafeList",
+				"title": "CodeShield: Add to Safe List",
+				"icon": "$(check)"
+			}
+		],
+		"configuration": {
+			"title": "CodeShield Security",
+			"properties": {
+				"codeshield.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable CodeShield secret detection"
+				},
+				"codeshield.autoRedact": {
+					"type": "boolean",
+					"default": false,
+					"description": "Automatically redact secrets before saving"
+				},
+				"codeshield.entropyThreshold": {
+					"type": "number",
+					"default": 4.2,
+					"description": "Entropy threshold for detecting high-entropy strings"
+				},
+				"codeshield.excludedFiles": {
+					"type": "array",
+					"default": [],
+					"description": "File patterns to exclude from scanning"
+				},
+				"codeshield.showNotifications": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show notifications when secrets are detected"
+				},
+				"codeshield.clipboardProtection": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable clipboard protection"
+				},
+				"codeshield.gitProtection": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable Git commit protection"
+				},
+				"codeshield.maxSecretsPerFile": {
+					"type": "number",
+					"default": 50,
+					"description": "Maximum number of secrets to detect per file"
+				}
+			}
+		},
+		"menus": {
+			"editor/context": [
+				{
+					"command": "codeshield.redactSecrets",
+					"group": "codeshield",
+					"when": "editorHasSelection"
+				},
+				{
+					"command": "codeshield.scanDocument",
+					"group": "codeshield"
+				}
+			],
+			"editor/title": [
+				{
+					"command": "codeshield.scanDocument",
+					"when": "editorTextFocus",
+					"group": "navigation"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "codeshield.redactSecrets",
+					"when": "editorHasSelection"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -w -p ./",
+		"clean": "rimraf dist",
+		"build": "npm run clean && npm run compile",
+		"test": "node simple_test.js",
+		"test:engine": "node -e \"const engine = require('./dist/engine/index.js'); console.log('Engine test:', engine.quickScan('sk-1234567890abcdef'));\"",
+		"copy-engine": "node -e \"require('fs').cpSync('engine','dist/engine',{recursive:true})\"",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src --ext ts"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.85.0",
+		"@types/node": "18.x",
+		"@typescript-eslint/eslint-plugin": "^6.13.0",
+		"@typescript-eslint/parser": "^6.13.0",
+		"eslint": "^8.54.0",
+		"typescript": "^5.3.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^9.0.1"
+	}
+}
