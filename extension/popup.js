@@ -215,11 +215,14 @@ class CodeShieldPopup {
         type: 'getScanResults'
       });
 
-      if (response && response.secretsFound) {
+      if (response && response.success && Array.isArray(response.secretsFound)) {
         this.displaySecrets(response.secretsFound);
+      } else {
+        this.displaySecrets([]);
       }
     } catch (error) {
       console.log('Content script not available:', error);
+      this.displaySecrets([]);
     }
   }
 
@@ -235,8 +238,12 @@ class CodeShieldPopup {
   displaySecrets(secrets) {
     const secretsSection = document.getElementById('secretsSection');
     const secretsList = document.getElementById('secretsList');
+    const detectionCount = document.getElementById('detectionCount');
+    const secretList = Array.isArray(secrets) ? secrets : [];
 
-    if (secrets.length === 0) {
+    detectionCount.textContent = secretList.length;
+
+    if (secretList.length === 0) {
       secretsSection.style.display = 'none';
       return;
     }
@@ -244,7 +251,7 @@ class CodeShieldPopup {
     secretsSection.style.display = 'block';
     secretsList.innerHTML = '';
 
-    secrets.forEach(secret => {
+    secretList.forEach(secret => {
       const secretItem = document.createElement('div');
       secretItem.className = 'secret-item';
       secretItem.innerHTML = `
@@ -449,6 +456,10 @@ class CodeShieldPopup {
 
   handleContentMessage(message, sender, sendResponse) {
     if (message.type === 'secretsDetected') {
+      const secretsFound = Array.isArray(message?.data?.secretsFound)
+        ? message.data.secretsFound
+        : [];
+
       // Read fresh stats from storage (background may have updated them)
       chrome.storage.local.get(['totalScans', 'secretsBlocked'], (result) => {
         this.stats.totalScans = result.totalScans || this.stats.totalScans;
@@ -456,10 +467,12 @@ class CodeShieldPopup {
         this.updateUI();
       });
 
+      this.displaySecrets(secretsFound);
+
       // Show notification for high-risk detections
-      if (message.data.secretsFound > 2) {
+      if (secretsFound.length > 2) {
         this.showNotification(
-          `${message.data.secretsFound} secrets detected and blocked!`,
+          `${secretsFound.length} secrets detected and blocked!`,
           'warning'
         );
       }
