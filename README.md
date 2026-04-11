@@ -1,8 +1,8 @@
-# 🛡️ CodeShield
+# 🛡️ Shoonya
 
 **Stop leaking secrets to AI chatbots.** (v2.0.0)
 
-CodeShield is a Chrome extension that silently watches what you type into AI tools like ChatGPT, Claude, and Gemini — and automatically redacts API keys, passwords, and tokens before they ever leave your browser.
+Shoonya is a Chrome extension that silently watches what you type into AI tools like ChatGPT, Claude, and Gemini — and automatically redacts API keys, passwords, and tokens before they ever leave your browser.
 
 No servers. No signups. No nonsense. It all runs locally.
 
@@ -64,7 +64,7 @@ It'll scan any site you visit — but the badge only lights up on supported AI p
 
 ## Quick Test
 
-Paste this into ChatGPT and watch CodeShield catch it:
+Paste this into ChatGPT and watch Shoonya catch it:
 
 ```
 OPENAI_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
