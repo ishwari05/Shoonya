@@ -19,7 +19,7 @@ const AlertsTable = ({ events }) => {
           <thead>
             <tr className="bg-slate-700/20 text-[10px] uppercase tracking-widest font-black text-slate-500 border-b border-slate-700/50">
               <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Threat Details</th>
+              <th className="px-6 py-4">Threat Details with each detail</th>
               <th className="px-6 py-4">Platform</th>
               <th className="px-6 py-4">Risk Score</th>
               <th className="px-6 py-4 text-right">Time</th>
@@ -51,7 +51,7 @@ const AlertsTable = ({ events }) => {
                       <td className="px-6 py-5">
                         <div>
                           <p className="text-sm font-bold text-slate-100 group-hover:text-primary transition-colors">{event.type}</p>
-                          <p className="text-xs text-slate-500 truncate w-48">{event.details}</p>
+                          <p className="text-xs text-slate-500 mt-1">{event.details}</p>
                         </div>
                       </td>
                       <td className="px-6 py-5">

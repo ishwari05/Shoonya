@@ -5,17 +5,26 @@ import {
   Scan, 
   Globe, 
   BarChart3, 
-  Settings 
+  Settings,
+  ShieldAlert
 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const Sidebar = ({ activeTab, onTabChange }) => {
+const Sidebar = ({ activeTab, onTabChange, role }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const menuItems = [
-    { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={20} /> },
-    { id: 'scans', label: 'Real-time Scans', icon: <Scan size={20} /> },
-    { id: 'platforms', label: 'Platforms', icon: <Globe size={20} /> },
-    { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
-    { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
+    { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={20} />, path: '/' },
+    { id: 'scans', label: 'Real-time Scans', icon: <Scan size={20} />, path: '/' },
+    { id: 'platforms', label: 'Platforms', icon: <Globe size={20} />, path: '/' },
+    { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} />, path: '/' },
+    { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/' },
   ];
+
+  if (role === 'admin') {
+    menuItems.push({ id: 'admin', label: 'Admin Panel', icon: <ShieldAlert size={20} />, path: '/admin' });
+  }
 
   return (
     <aside className="w-64 bg-slate-800/50 backdrop-blur-xl border-r border-slate-700 h-screen fixed left-0 top-0 z-50 flex flex-col p-6">
@@ -27,22 +36,32 @@ const Sidebar = ({ activeTab, onTabChange }) => {
       </div>
 
       <nav className="flex-1 flex flex-col gap-2">
-        {menuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onTabChange(item.id)}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-              activeTab === item.id 
-                ? 'bg-primary text-white shadow-lg shadow-primary/20 font-semibold' 
-                : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
-            }`}
-          >
-            <span className={`${activeTab === item.id ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`}>
-              {item.icon}
-            </span>
-            <span className="text-sm">{item.label}</span>
-          </button>
-        ))}
+        {menuItems.map((item) => {
+          const isActive = location.pathname === item.path && (item.path !== '/' || activeTab === item.id);
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                if (item.path === '/') {
+                  onTabChange(item.id);
+                  navigate('/');
+                } else {
+                  navigate(item.path);
+                }
+              }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                isActive 
+                  ? 'bg-primary text-white shadow-lg shadow-primary/20 font-semibold' 
+                  : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
+              }`}
+            >
+              <span className={`${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                {item.icon}
+              </span>
+              <span className="text-sm">{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
       <div className="mt-auto p-4 bg-slate-700/30 rounded-2xl border border-slate-700/50">
