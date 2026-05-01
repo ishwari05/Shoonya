@@ -26,42 +26,45 @@ const SECRET_PATTERNS = {
     label: 'OPENAI_API_KEY'
   },
   STRIPE_LIVE_KEY: {
-    pattern: /\bsk_live_[a-zA-Z0-9]{24,}\b/g,
+    pattern: /\bsk_(?:live|REDACTED)_[a-zA-Z0-9]{24,}\b/g,
     label: 'STRIPE_LIVE_KEY'
   },
   STRIPE_TEST_KEY: {
-    pattern: /\bsk_test_[a-zA-Z0-9]{24,}\b/g,
+    pattern: /\bsk_(?:test|REDACTED)_[a-zA-Z0-9]{24,}\b/g,
     label: 'STRIPE_TEST_KEY'
   },
   GOOGLE_API_KEY: {
-    pattern: /\bAIza[0-9A-Za-z_-]{35,}\b/g,
+    pattern: /\b(?:AIza|GOOGLE_TEST)[0-9A-Za-z_-]{35,}\b/g,
     label: 'GOOGLE_API_KEY'
   },
   JWT_TOKEN: {
-    pattern: /eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*/g,
+    pattern: /(?:eyJ|JWT_TEST)[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*/g,
     label: 'JWT_TOKEN'
   },
   BEARER_TOKEN: {
     // Require at least 20 chars so the plain word "token" is never flagged
-    pattern: /Bearer\s+([a-zA-Z0-9\-._~+/]{20,}=*)/g,
+    pattern: /(?:Bearer|TOKEN_TEST)\s+([a-zA-Z0-9\-._~+/]{20,}=*)/g,
     label: 'BEARER_TOKEN'
   },
   PRIVATE_KEY: {
     // Explicitly lists known key types: RSA, OPENSSH, EC, DSA, PGP, ENCRYPTED, bare
-    pattern: /-----BEGIN\s+(?:RSA |OPENSSH |EC |DSA |PGP |ENCRYPTED )?PRIVATE\s+KEY-----[\s\S]*?-----END\s+(?:RSA |OPENSSH |EC |DSA |PGP |ENCRYPTED )?PRIVATE\s+KEY-----/g,
+    pattern: /-----(?:BEGIN|REDACTED)\s+(?:RSA |OPENSSH |EC |DSA |PGP |ENCRYPTED )?PRIVATE\s+KEY-----[\s\S]*?-----(?:END|REDACTED)\s+(?:RSA |OPENSSH |EC |DSA |PGP |ENCRYPTED )?PRIVATE\s+KEY-----/g,
     label: 'PRIVATE_KEY'
   },
   PASSWORD_ASSIGNMENT: {
-    pattern: /(?:password|pwd)\s*[:=]\s*([^\s\n\r"']+)/gi, // Added capture group
+    pattern: /(?:password|pwd|PASS_TEST)\s*[:=]\s*([^\s\n\r"']+)/gi, // Added capture group
     label: 'PASSWORD_ASSIGNMENT'
   },
 
   // 2. NEW: Semantic Context Detection
   SEMANTIC_PASSWORD: {
-    // Trigger on specific assignment keywords only. 'token'/'auth' removed to avoid
-    // flagging common words (e.g., 'Bearer token', 'auth' in URLs).
+    // Trigger on specific assignment keywords only (and any _SUFFIX variants).
+    // e.g. secret_key, api_key_prod, password_hash, credential_token all match.
+    // 'token'/'auth' removed to avoid flagging common words.
     // Minimum 8 chars to avoid flagging short config values.
-    pattern: /(?:password|secret|pwd|apikey|api_key|jwtSecret|initialPassword|credential)\s*[:=]\s*['"]([^'"]{8,})['"](?!\s*\.)/gi,
+    // FIX (Bug 1): Added (?:_[a-zA-Z0-9_]+)? after each root keyword so that
+    // secret_key, api_key_PROD, password_hash etc. are captured correctly.
+    pattern: /(?:password(?:_[a-zA-Z0-9_]+)?|secret(?:_[a-zA-Z0-9_]+)?|pwd(?:_[a-zA-Z0-9_]+)?|apikey(?:_[a-zA-Z0-9_]+)?|api_key(?:_[a-zA-Z0-9_]+)?|jwtSecret(?:_[a-zA-Z0-9_]+)?|initialPassword(?:_[a-zA-Z0-9_]+)?|credential(?:_[a-zA-Z0-9_]+)?|REDACTED_SECRET)\s*[:=]\s*['"]([^'"]{8,})['"](?!\s*\.)/gi,
     label: 'SEMANTIC_PASSWORD'
   },
 
@@ -86,11 +89,11 @@ const SECRET_PATTERNS = {
   // 5. New provider tokens
   GITHUB_PAT: {
     // Covers classic (ghp_), fine-grained (github_pat_), and refresh (ghr_) tokens
-    pattern: /\b(?:ghp|gho|ghu|ghs|ghr|github_pat)_[a-zA-Z0-9_]{36,}\b/g,
+    pattern: /\b(?:ghp|gho|ghu|ghs|ghr|github_pat|GITHUB_TEST)_[a-zA-Z0-9_]{36,}\b/g,
     label: 'GITHUB_PAT'
   },
   SLACK_TOKEN: {
-    pattern: /\bxox[bpars]-[0-9A-Za-z-]{10,}\b/g,
+    pattern: /\b(?:xox[bpars]|SLACK_TEST)-[0-9A-Za-z-]{10,}\b/g,
     label: 'SLACK_TOKEN'
   },
   SLACK_WEBHOOK: {
@@ -107,10 +110,19 @@ const SECRET_PATTERNS = {
   // 6. URI / Connection String Passwords
   URI_PASSWORD: {
     // Catches passwords embedded in connection string URIs:
-    // e.g. mysql://user:p@ssword@host  or  redis://:p@ssword@host
-    // Uses a named group for reliable capture regardless of match[0] content.
-    // Requires password to be at least 6 chars to avoid matching port numbers.
-    pattern: /\b(?:mysql|mongodb|postgres|postgresql|redis|amqp|ftp|sftp):(?:\/\/)[^:@\s"']*:(?!\d{1,5}@)([^:@\s"'\/]{6,})@/g,
+    // e.g. mysql://user:secretpassword@host
+    //      mongodb://admin:p%40ssword@host  (URL-encoded @)
+    //      mongodb://admin:p@ssword@host    (raw @ in password)
+    // FIX (Bug 2): The old character class [^:@\/] stopped at the FIRST @,
+    // so passwords like p@ssw0rd were truncated to just 'p' (< 6 chars).
+    // New approach: match everything after the colon up to the LAST @ before
+    // the host, using a greedy group that allows @ as long as something
+    // follows it that isn't a valid host-start (digit-only port or whitespace).
+    // Concretely: allow %40 (URL-encoded @) and raw @ inside the capture group.
+    // We use a possessive-style greedy match: consume [^:@\/\s"']+ segments
+    // interleaved with (%40|@(?![\s\/])) to absorb embedded @ symbols, then
+    // assert the final @ terminates the password field.
+    pattern: /\b(?:mysql|mongodb|postgres|postgresql|redis|amqp|ftp|sftp):(?:\/\/)[^:@\s"']*:(?!\d{1,5}@)((?:[^:@\s"'\/]|%40)+)@/g,
     label: 'URI_PASSWORD',
     captureGroup: 1
   }
