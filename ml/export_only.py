@@ -24,7 +24,7 @@ def export_onnx(model, tokenizer, output_dir: Path, max_len: int, device):
     dummy_input_ids      = dummy_enc["input_ids"].to(device)
     dummy_attention_mask = dummy_enc["attention_mask"].to(device)
 
-    onnx_path = output_dir / "codeshield_ner.onnx"
+    onnx_path = output_dir / "shoonya_ner.onnx"
 
     torch.onnx.export(
         model,

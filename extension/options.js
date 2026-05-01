@@ -1,9 +1,9 @@
 /**
- * CodeShield Options Script
+ * Shoonya Options Script
  * Manages the extension settings page
  */
 
-class CodeShieldOptions {
+class ShoonyaOptions {
   constructor() {
     this.settings = {};
     this.defaultSettings = {
@@ -28,7 +28,7 @@ class CodeShieldOptions {
   }
 
   async init() {
-    console.log('⚙️ CodeShield Options Page Loaded');
+    console.log('⚙️ Shoonya Options Page Loaded');
     
     // Load current settings
     await this.loadSettings();
@@ -102,19 +102,19 @@ class CodeShieldOptions {
     // Footer links
     document.getElementById('documentation').addEventListener('click', () => {
       chrome.tabs.create({
-        url: 'https://github.com/ishwari05/codeshield-security#readme'
+        url: 'https://github.com/ishwari05/shoonya-security#readme'
       });
     });
 
     document.getElementById('support').addEventListener('click', () => {
       chrome.tabs.create({
-        url: 'https://github.com/ishwari05/codeshield-security/issues'
+        url: 'https://github.com/ishwari05/shoonya-security/issues'
       });
     });
 
     document.getElementById('github').addEventListener('click', () => {
       chrome.tabs.create({
-        url: 'https://github.com/ishwari05/codeshield-security'
+        url: 'https://github.com/ishwari05/shoonya-security'
       });
     });
 
@@ -288,7 +288,7 @@ class CodeShieldOptions {
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `codeshield-backup-${new Date().toISOString().split('T')[0]}.json`;
+        link.download = `shoonya-backup-${new Date().toISOString().split('T')[0]}.json`;
         link.click();
         
         URL.revokeObjectURL(url);
@@ -339,5 +339,5 @@ class CodeShieldOptions {
 
 // Initialize options page when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  new CodeShieldOptions();
+  new ShoonyaOptions();
 });

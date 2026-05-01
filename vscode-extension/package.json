@@ -1,9 +1,9 @@
 {
-	"name": "codeshield-security",
-	"displayName": "CodeShield Security",
+	"name": "shoonya-security",
+	"displayName": "Shoonya Security",
 	"description": "Protect developers from accidentally exposing secrets while coding, copying, pasting into AI tools, and committing to Git",
 	"version": "1.0.0",
-	"publisher": "codeshield",
+	"publisher": "shoonya",
 	"engines": {
 		"vscode": "^1.85.0"
 	},
@@ -35,70 +35,70 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "codeshield.redactSecrets",
-				"title": "CodeShield: Redact Secrets",
+				"command": "shoonya.redactSecrets",
+				"title": "Shoonya: Redact Secrets",
 				"icon": "$(shield)"
 			},
 			{
-				"command": "codeshield.scanDocument",
-				"title": "CodeShield: Scan Document for Secrets",
+				"command": "shoonya.scanDocument",
+				"title": "Shoonya: Scan Document for Secrets",
 				"icon": "$(search)"
 			},
 			{
-				"command": "codeshield.quickRedact",
-				"title": "CodeShield: Quick Redact (No Confirmation)",
+				"command": "shoonya.quickRedact",
+				"title": "Shoonya: Quick Redact (No Confirmation)",
 				"icon": "$(zap)"
 			},
 			{
-				"command": "codeshield.ignoreSecret",
-				"title": "CodeShield: Ignore This Secret",
+				"command": "shoonya.ignoreSecret",
+				"title": "Shoonya: Ignore This Secret",
 				"icon": "$(eye-off)"
 			},
 			{
-				"command": "codeshield.addToSafeList",
-				"title": "CodeShield: Add to Safe List",
+				"command": "shoonya.addToSafeList",
+				"title": "Shoonya: Add to Safe List",
 				"icon": "$(check)"
 			}
 		],
 		"configuration": {
-			"title": "CodeShield Security",
+			"title": "Shoonya Security",
 			"properties": {
-				"codeshield.enabled": {
+				"shoonya.enabled": {
 					"type": "boolean",
 					"default": true,
-					"description": "Enable CodeShield secret detection"
+					"description": "Enable Shoonya secret detection"
 				},
-				"codeshield.autoRedact": {
+				"shoonya.autoRedact": {
 					"type": "boolean",
 					"default": false,
 					"description": "Automatically redact secrets before saving"
 				},
-				"codeshield.entropyThreshold": {
+				"shoonya.entropyThreshold": {
 					"type": "number",
 					"default": 4.2,
 					"description": "Entropy threshold for detecting high-entropy strings"
 				},
-				"codeshield.excludedFiles": {
+				"shoonya.excludedFiles": {
 					"type": "array",
 					"default": [],
 					"description": "File patterns to exclude from scanning"
 				},
-				"codeshield.showNotifications": {
+				"shoonya.showNotifications": {
 					"type": "boolean",
 					"default": true,
 					"description": "Show notifications when secrets are detected"
 				},
-				"codeshield.clipboardProtection": {
+				"shoonya.clipboardProtection": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable clipboard protection"
 				},
-				"codeshield.gitProtection": {
+				"shoonya.gitProtection": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable Git commit protection"
 				},
-				"codeshield.maxSecretsPerFile": {
+				"shoonya.maxSecretsPerFile": {
 					"type": "number",
 					"default": 50,
 					"description": "Maximum number of secrets to detect per file"
@@ -108,25 +108,25 @@
 		"menus": {
 			"editor/context": [
 				{
-					"command": "codeshield.redactSecrets",
-					"group": "codeshield",
+					"command": "shoonya.redactSecrets",
+					"group": "shoonya",
 					"when": "editorHasSelection"
 				},
 				{
-					"command": "codeshield.scanDocument",
-					"group": "codeshield"
+					"command": "shoonya.scanDocument",
+					"group": "shoonya"
 				}
 			],
 			"editor/title": [
 				{
-					"command": "codeshield.scanDocument",
+					"command": "shoonya.scanDocument",
 					"when": "editorTextFocus",
 					"group": "navigation"
 				}
 			],
 			"commandPalette": [
 				{
-					"command": "codeshield.redactSecrets",
+					"command": "shoonya.redactSecrets",
 					"when": "editorHasSelection"
 				}
 			]

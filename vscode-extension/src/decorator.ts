@@ -1,5 +1,5 @@
 /**
- * CodeShield Decorator
+ * Shoonya Decorator
  * Handles highlighting secrets in the VS Code editor
  */
 
@@ -37,10 +37,10 @@ export class SecretDecorator {
 
         // Create status bar item
         this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-        this.statusBar.command = 'codeshield.scanDocument';
+        this.statusBar.command = 'shoonya.scanDocument';
 
         // Create output channel for logging
-        this.outputChannel = vscode.window.createOutputChannel('CodeShield');
+        this.outputChannel = vscode.window.createOutputChannel('Shoonya');
     }
 
     /**
@@ -66,8 +66,8 @@ export class SecretDecorator {
                     `⚠️ **${this.formatSecretType(secret.type)}** detected\n\n` +
                     `Type: \`${secret.type}\`\n` +
                     `Length: ${secret.value.length} characters\n\n` +
-                    `[Redact Secret](command:codeshield.redactSecrets?${encodeURIComponent(JSON.stringify(secret))}) | ` +
-                    `[Ignore](command:codeshield.ignoreSecret?${encodeURIComponent(JSON.stringify(secret))})`
+                    `[Redact Secret](command:shoonya.redactSecrets?${encodeURIComponent(JSON.stringify(secret))}) | ` +
+                    `[Ignore](command:shoonya.ignoreSecret?${encodeURIComponent(JSON.stringify(secret))})`
                 )
             });
         }
@@ -109,7 +109,7 @@ export class SecretDecorator {
         }
 
         this.statusBar.text = `$(shield) ${count} secret${count > 1 ? 's' : ''}`;
-        this.statusBar.tooltip = `CodeShield detected ${count} secret${count > 1 ? 's' : ''}. Click to scan document.`;
+        this.statusBar.tooltip = `Shoonya detected ${count} secret${count > 1 ? 's' : ''}. Click to scan document.`;
         this.statusBar.backgroundColor = count > 3 ? 
             new vscode.ThemeColor('statusBarItem.errorBackground') : 
             new vscode.ThemeColor('statusBarItem.warningBackground');
@@ -133,11 +133,11 @@ export class SecretDecorator {
     public showSecretNotification(secrets: SecretDetection[], document: vscode.TextDocument): void {
         if (secrets.length === 0) return;
 
-        const config = vscode.workspace.getConfiguration('codeshield');
+        const config = vscode.workspace.getConfiguration('shoonya');
         if (!config.get('showNotifications')) return;
 
         const riskLevel = this.getRiskLevel(secrets);
-        const message = `⚠ CodeShield detected ${secrets.length} possible secret${secrets.length > 1 ? 's' : ''} in ${document.fileName.split('/').pop()}`;
+        const message = `⚠ Shoonya detected ${secrets.length} possible secret${secrets.length > 1 ? 's' : ''} in ${document.fileName.split('/').pop()}`;
 
         const actions = [
             'Redact All',
@@ -147,7 +147,7 @@ export class SecretDecorator {
 
         vscode.window.showWarningMessage(message, ...actions).then(action => {
             if (action === 'Redact All') {
-                vscode.commands.executeCommand('codeshield.redactSecrets');
+                vscode.commands.executeCommand('shoonya.redactSecrets');
             } else if (action === 'View Details') {
                 this.outputChannel.show();
             } else if (action === 'Ignore') {

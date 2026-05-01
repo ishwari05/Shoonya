@@ -9,7 +9,7 @@ import { processCode } from './engine/index.js';
 
 // ── NER Web Worker ──────────────────────────────────────────
 // Spawned once; inference runs off the main thread.
-const NER_MODEL_URL = chrome.runtime.getURL('engine/models/codeshield_ner.onnx');
+const NER_MODEL_URL = chrome.runtime.getURL('engine/models/shoonya_ner.onnx');
 const NER_VOCAB_URL = chrome.runtime.getURL('engine/models/vocab.json');
 
 let nerWorker = null;
@@ -24,7 +24,7 @@ function initNerWorker() {
       const { type, id, result, error } = e.data;
       if (type === 'ready') {
         nerReady = true;
-        console.log('🤖 CodeShield NER model ready');
+        console.log('🤖 Shoonya NER model ready');
         return;
       }
       if (type === 'result' && nerPending.has(id)) {
@@ -75,7 +75,7 @@ class ShoonyaBackground {
   }
 
   init() {
-    console.log('🛡️ CodeShield Background Script Started');
+    console.log('🛡️ Shoonya Background Script Started');
     this.loadData();
     this.setupEventListeners();
     this.setupPeriodicTasks();
@@ -199,8 +199,8 @@ class ShoonyaBackground {
     chrome.notifications?.create({
       type: 'basic',
       iconUrl: 'icons/icon48.png',
-      title: 'CodeShield Installed!',
-      message: '🛡️ CodeShield is now protecting you. Click to learn more.',
+      title: 'Shoonya Installed!',
+      message: '🛡️ Shoonya is now protecting you. Click to learn more.',
       priority: 2
     });
   }
@@ -209,7 +209,7 @@ class ShoonyaBackground {
     chrome.notifications?.create({
       type: 'basic',
       iconUrl: 'icons/icon48.png',
-      title: 'CodeShield Updated',
+      title: 'Shoonya Updated',
       message: 'New features available. Check out what\'s new!',
       priority: 1
     });
@@ -435,7 +435,7 @@ class ShoonyaBackground {
     chrome.notifications?.create({
       type: 'basic',
       iconUrl: 'icons/icon48.png',
-      title: 'CodeShield Alert',
+      title: 'Shoonya Alert',
       message: `🚨 ${secretCount} potential secrets detected!`,
       priority: 2
     });

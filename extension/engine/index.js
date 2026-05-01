@@ -1,5 +1,5 @@
 /**
- * CodeShield Detection Engine
+ * Shoonya Detection Engine
  * Main orchestrator for secret detection pipeline
  */
 
@@ -151,7 +151,7 @@ export function processCode(rawCode) {
     };
 
   } catch (error) {
-    console.error('CodeShield processing error:', error);
+    console.error('Shoonya processing error:', error);
     return { secretsFound: [], redactedCode: rawCode, mapping: {}, metadata: { totalLength: rawCode.length, processingTime: 0, scanCount: 0, error: error.message } };
   }
 }

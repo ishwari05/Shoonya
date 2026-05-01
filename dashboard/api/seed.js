@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Event = require('./models/Event');
 
-const MONGODB_URI = 'mongodb://localhost:27017/codeshield';
+const MONGODB_URI = 'mongodb://localhost:27017/shoonya';
 
 const types = ['API_KEY', 'PASSWORD', 'JWT_TOKEN', 'PRIVATE_KEY', 'OTHER'];
 const platforms = ['ChatGPT', 'Claude', 'Gemini', 'GitHub'];

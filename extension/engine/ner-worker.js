@@ -1,5 +1,5 @@
 /**
- * ner-worker.js — CodeShield ONNX NER Web Worker
+ * ner-worker.js — Shoonya ONNX NER Web Worker
  *
  * Runs inside a Web Worker so inference never blocks the browser tab.
  * Loaded once from background.js on service worker startup.

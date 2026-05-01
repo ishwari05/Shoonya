@@ -1,6 +1,6 @@
-# CodeShield Extension Icons
+# Shoonya Extension Icons
 
-This directory contains the icons for the CodeShield browser extension.
+This directory contains the icons for the Shoonya browser extension.
 
 ## Required Icons:
 - icon16.png - 16x16 pixels
@@ -19,7 +19,7 @@ Color scheme should use:
 
 ## Temporary Note:
 For development/testing, you can use placeholder icons or download from:
-https://github.com/ishwari05/codeshield-security/tree/main/extension/icons
+https://github.com/ishwari05/shoonya-security/tree/main/extension/icons
 
 ## Icon States:
 - Normal: Blue shield

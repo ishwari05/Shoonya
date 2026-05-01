@@ -1,4 +1,4 @@
-# CodeShield ML — Python Dependencies
+# Shoonya ML — Python Dependencies
 
 # Core ML
 torch>=2.1.0

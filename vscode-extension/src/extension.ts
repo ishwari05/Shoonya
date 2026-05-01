@@ -1,5 +1,5 @@
 /**
- * CodeShield VS Code Extension
+ * Shoonya VS Code Extension
  * Main extension entry point
  */
 
@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import { SecretDecorator } from './decorator';
 import { DiagnosticProvider } from './diagnostics';
 import { CommandHandler } from './commands';
-import { CodeShieldEngine } from './engine-wrapper';
+import { ShoonyaEngine } from './engine-wrapper';
 import { registerCodeActionProvider } from './codeActions';
 
 // Global instances
@@ -20,7 +20,7 @@ let disposables: vscode.Disposable[] = [];
  * Extension activation
  */
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('🔥 CodeShield extension is now active!');
+    console.log('🔥 Shoonya extension is now active!');
 
     // Initialize components
     decorator = new SecretDecorator();
@@ -42,14 +42,14 @@ export async function activate(context: vscode.ExtensionContext) {
     await scanOpenDocuments();
 
     // Show welcome message
-    const config = vscode.workspace.getConfiguration('codeshield');
+    const config = vscode.workspace.getConfiguration('shoonya');
     if (config.get('enabled') as boolean) {
         vscode.window.showInformationMessage(
-            '🛡️ CodeShield is active - protecting your secrets',
+            '🛡️ Shoonya is active - protecting your secrets',
             'Learn More'
         ).then(action => {
             if (action === 'Learn More') {
-                vscode.env.openExternal(vscode.Uri.parse('https://github.com/codeshield-security/codeshield-vscode'));
+                vscode.env.openExternal(vscode.Uri.parse('https://github.com/shoonya-security/shoonya-vscode'));
             }
         });
     }
@@ -64,7 +64,7 @@ export async function activate(context: vscode.ExtensionContext) {
  * Extension deactivation
  */
 export function deactivate(): void {
-    console.log('🔥 CodeShield extension deactivated');
+    console.log('🔥 Shoonya extension deactivated');
     
     // Clear decorations and diagnostics
     if (decorator) {
@@ -119,7 +119,7 @@ function registerEventListeners(): void {
     // Before save (optional auto-redaction)
     const saveDisposable = vscode.workspace.onWillSaveTextDocument(async (event) => {
         console.log('🔧 Document saving, checking for secrets...');
-        const config = vscode.workspace.getConfiguration('codeshield');
+        const config = vscode.workspace.getConfiguration('shoonya');
         if (config.get('autoRedact')) {
             await handleAutoRedaction(event.document);
         }
@@ -128,7 +128,7 @@ function registerEventListeners(): void {
 
     // Clipboard protection
     const clipboardDisposable = vscode.workspace.onDidChangeTextDocument(async (event) => {
-        const config = vscode.workspace.getConfiguration('codeshield');
+        const config = vscode.workspace.getConfiguration('shoonya');
         if (config.get('clipboardProtection')) {
             await handleClipboardProtection(event);
         }
@@ -171,7 +171,7 @@ async function scanOpenDocuments(): Promise<void> {
  */
 async function handleAutoRedaction(document: vscode.TextDocument): Promise<void> {
     try {
-        const result = CodeShieldEngine.processText(document.getText());
+        const result = ShoonyaEngine.processText(document.getText());
         
         if (result.secretsFound.length > 0) {
             const confirmMessage = `Auto-redacting ${result.secretsFound.length} secret${result.secretsFound.length > 1 ? 's' : ''} before save. This action cannot be undone.`;
@@ -204,7 +204,7 @@ async function handleClipboardProtection(event: vscode.TextDocumentChangeEvent):
     
     if (isPaste) {
         const text = event.document.getText();
-        const result = CodeShieldEngine.processText(text);
+        const result = ShoonyaEngine.processText(text);
         
         if (result.secretsFound.length > 0) {
             const confirmMessage = `You pasted text containing ${result.secretsFound.length} secret${result.secretsFound.length > 1 ? 's' : ''}. This could expose sensitive information.`;
@@ -224,7 +224,7 @@ async function handleClipboardProtection(event: vscode.TextDocumentChangeEvent):
  * Handle Git commit protection
  */
 async function handleGitProtection(): Promise<void> {
-    const config = vscode.workspace.getConfiguration('codeshield');
+    const config = vscode.workspace.getConfiguration('shoonya');
     if (!config.get('gitProtection')) {
         return;
     }
@@ -246,7 +246,7 @@ async function handleGitProtection(): Promise<void> {
             const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**');
             for (const file of files) {
                 const document = await vscode.workspace.openTextDocument(file);
-                const secrets = CodeShieldEngine.quickScan(document.getText());
+                const secrets = ShoonyaEngine.quickScan(document.getText());
                 secretsFound += secrets.length;
             }
         } catch (error) {
@@ -257,16 +257,16 @@ async function handleGitProtection(): Promise<void> {
 
     if (secretsFound > 0) {
         const action = await vscode.window.showWarningMessage(
-            `🚨 CodeShield detected ${secretsFound} secret${secretsFound > 1 ? 's' : ''} in files that would be committed. Commit blocked.`,
+            `🚨 Shoonya detected ${secretsFound} secret${secretsFound > 1 ? 's' : ''} in files that would be committed. Commit blocked.`,
             'View Details',
             'Force Commit',
             'Cancel'
         );
 
         if (action === 'View Details') {
-            vscode.commands.executeCommand('codeshield.showStats');
+            vscode.commands.executeCommand('shoonya.showStats');
         } else if (action === 'Cancel') {
-            throw new Error('Commit blocked by CodeShield');
+            throw new Error('Commit blocked by Shoonya');
         }
     }
 }
@@ -275,16 +275,16 @@ async function handleGitProtection(): Promise<void> {
  * Handle configuration changes
  */
 async function handleConfigurationChange(): Promise<void> {
-    const config = vscode.workspace.getConfiguration('codeshield');
+    const config = vscode.workspace.getConfiguration('shoonya');
     
     if (!config.get('enabled')) {
         // Clear all decorations and diagnostics when disabled
         decorator.clearDecorations();
         diagnosticProvider.clearAllDiagnostics();
-        vscode.window.showInformationMessage('CodeShield disabled');
+        vscode.window.showInformationMessage('Shoonya disabled');
     } else {
         // Re-scan all documents when enabled
         await scanOpenDocuments();
-        vscode.window.showInformationMessage('CodeShield enabled');
+        vscode.window.showInformationMessage('Shoonya enabled');
     }
 }

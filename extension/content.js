@@ -1,11 +1,11 @@
 /**
- * Shodhan.ai Content Script
+ * Shoonya.ai Content Script
  * Integrated Hybrid Detection: Regex (Local) + DistilBERT/Entropy (Background)
  */
 
-console.log('🔥 DEBUG: Shodhan.ai content script is loading!');
+console.log('🔥 DEBUG: Shoonya.ai content script is loading!');
 
-class CodeShieldContent {
+class ShoonyaContent {
   constructor() {
     this.isScanning = false;
     this.scanTimer = null;
@@ -25,7 +25,7 @@ class CodeShieldContent {
       return;
     }
 
-    console.log('🔍 Shodhan.ai Content Script Initialized');
+    console.log('🔍 Shoonya.ai Content Script Initialized');
     this.settings = await this.loadSettings();
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -40,7 +40,7 @@ class CodeShieldContent {
     this.observePage();
     document.addEventListener('selectionchange', this.handleSelection.bind(this));
     document.addEventListener('mousedown', (e) => {
-      if (!e.target.closest('.codeshield-report-btn')) {
+      if (!e.target.closest('.shoonya-report-btn')) {
         this.hideReportButton();
       }
     });
@@ -50,7 +50,7 @@ class CodeShieldContent {
   applyIndianHeuristics(text) {
     const patterns = {
       GSTIN: /\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}\b/g,
-      PINCODE: /\b(632\d{3}|[1-9][0-9]{2}\s?[0-9]{3})\b/g, 
+      PINCODE: /\b(632\d{3}|[1-9][0-9]{2}\s?[0-9]{3})\b/g,
       PAN_CARD: /\b[A-Z]{5}\d{4}[A-Z]{1}\b/g,
       PHONE: /(?:\+91|91|0)?[6-9]\d{9}|[6-9]\d{4}[\-\s]\d{5}/g
     };
@@ -63,7 +63,7 @@ class CodeShieldContent {
       if (matches) {
         matches.forEach(m => {
           const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(m);
-          if (isUUID) return; 
+          if (isUUID) return;
 
           localSecrets.push({ type: label, value: m });
           processedText = processedText.replace(m, `[LOCAL_${label}_REDACTED]`);
@@ -152,7 +152,7 @@ class CodeShieldContent {
     try {
       const response = await chrome.runtime.sendMessage({
         action: "scanText",
-        text: localSecrets.length > 0 ? processedText : text 
+        text: localSecrets.length > 0 ? processedText : text
       });
 
       if (response && response.success && response.data) {
@@ -188,8 +188,8 @@ class CodeShieldContent {
     this.isScanning = false;
 
     if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set || 
-                           Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set ||
+        Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
       if (nativeSetter) {
         nativeSetter.call(element, text);
       } else {
@@ -219,31 +219,31 @@ class CodeShieldContent {
   }
 
   showWarning(element, result) {
-    document.querySelectorAll('.codeshield-warning').forEach(w => w.remove());
-    
+    document.querySelectorAll('.shoonya-warning').forEach(w => w.remove());
+
     const warning = document.createElement('div');
-    warning.className = 'codeshield-warning';
+    warning.className = 'shoonya-warning';
     warning.innerHTML = `
-      <div class="codeshield-warning-content">
-        <span class="codeshield-icon">🛡️</span>
-        <span class="codeshield-text">${result.secretsFound.length} secrets sanitized!</span>
-        <button class="codeshield-close-btn">×</button>
+      <div class="shoonya-warning-content">
+        <span class="shoonya-icon">🛡️</span>
+        <span class="shoonya-text">${result.secretsFound.length} secrets sanitized!</span>
+        <button class="shoonya-close-btn">×</button>
       </div>
-      <div class="codeshield-feedback">
-        <button class="codeshield-fb-btn codeshield-fb-yes">👍 Accurate</button>
-        <button class="codeshield-fb-btn codeshield-fb-no">👎 False Positive</button>
+      <div class="shoonya-feedback">
+        <button class="shoonya-fb-btn shoonya-fb-yes">👍 Accurate</button>
+        <button class="shoonya-fb-btn shoonya-fb-no">👎 False Positive</button>
       </div>`;
 
     if (element.parentNode) element.parentNode.insertBefore(warning, element);
-    warning.querySelector('.codeshield-close-btn').addEventListener('click', () => warning.remove());
-    
+    warning.querySelector('.shoonya-close-btn').addEventListener('click', () => warning.remove());
+
     const sendFeedback = (label) => {
       chrome.runtime.sendMessage({ type: 'saveFeedback', data: { label, secrets: result.secretsFound.length } });
-      warning.querySelector('.codeshield-feedback').innerHTML = `<span>Feedback saved! ✓</span>`;
+      warning.querySelector('.shoonya-feedback').innerHTML = `<span>Feedback saved! ✓</span>`;
     };
 
-    warning.querySelector('.codeshield-fb-yes').addEventListener('click', () => sendFeedback('correct'));
-    warning.querySelector('.codeshield-fb-no').addEventListener('click', () => sendFeedback('false_positive'));
+    warning.querySelector('.shoonya-fb-yes').addEventListener('click', () => sendFeedback('correct'));
+    warning.querySelector('.shoonya-fb-no').addEventListener('click', () => sendFeedback('false_positive'));
     setTimeout(() => { if (warning.parentNode) warning.remove(); }, 8000);
   }
 
@@ -266,7 +266,7 @@ class CodeShieldContent {
     this.hideReportButton();
     const btn = document.createElement('button');
     btn.id = 'cs-report-btn';
-    btn.className = 'codeshield-report-btn';
+    btn.className = 'shoonya-report-btn';
     btn.innerHTML = '🛡️ Report Leak';
     btn.style.position = 'absolute';
     btn.style.top = `${window.scrollY + rect.top - 40}px`;
@@ -285,14 +285,14 @@ class CodeShieldContent {
     this.originalContent.set(element, originalText);
     this.setElementText(element, result.redactedCode);
     this.redactedContent.set(element, result.mapping);
-    element.classList.add('codeshield-redacted');
+    element.classList.add('shoonya-redacted');
   }
 
   restoreElement(element) {
     const originalText = this.originalContent.get(element);
     if (originalText) {
       this.setElementText(element, originalText);
-      element.classList.remove('codeshield-redacted');
+      element.classList.remove('shoonya-redacted');
       this.originalContent.delete(element);
     }
   }
@@ -338,12 +338,12 @@ class CodeShieldContent {
           secretsFound: result.secretsFound
         }
       });
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => new CodeShieldContent());
+  document.addEventListener('DOMContentLoaded', () => new ShoonyaContent());
 } else {
-  new CodeShieldContent();
+  new ShoonyaContent();
 }

@@ -1,5 +1,5 @@
 /**
- * CodeShield Diagnostics
+ * Shoonya Diagnostics
  * Integrates with VS Code Problems panel to show detected secrets
  */
 
@@ -11,8 +11,8 @@ export class DiagnosticProvider {
     private outputChannel: vscode.OutputChannel;
 
     constructor() {
-        this.diagnosticCollection = vscode.languages.createDiagnosticCollection('codeshield');
-        this.outputChannel = vscode.window.createOutputChannel('CodeShield Diagnostics');
+        this.diagnosticCollection = vscode.languages.createDiagnosticCollection('shoonya');
+        this.outputChannel = vscode.window.createOutputChannel('Shoonya Diagnostics');
     }
 
     /**
@@ -34,7 +34,7 @@ export class DiagnosticProvider {
                 this.getDiagnosticSeverity(secret.type)
             );
 
-            diagnostic.source = 'CodeShield';
+            diagnostic.source = 'Shoonya';
             diagnostic.code = secret.type;
             diagnostic.tags = [vscode.DiagnosticTag.Unnecessary];
 
@@ -172,11 +172,11 @@ export class DiagnosticProvider {
         const stats = this.getDiagnosticStats();
         
         if (stats.totalSecrets === 0) {
-            vscode.window.showInformationMessage('✅ CodeShield: No secrets detected in workspace');
+            vscode.window.showInformationMessage('✅ Shoonya: No secrets detected in workspace');
             return;
         }
 
-        const message = `📊 CodeShield Statistics:\n` +
+        const message = `📊 Shoonya Statistics:\n` +
             `• Total secrets: ${stats.totalSecrets}\n` +
             `• Files with secrets: ${stats.filesWithSecrets}\n` +
             `• Types detected: ${Object.keys(stats.secretsByType).length}`;
@@ -184,7 +184,7 @@ export class DiagnosticProvider {
         vscode.window.showInformationMessage(message, 'View Details').then(action => {
             if (action === 'View Details') {
                 this.outputChannel.show();
-                this.outputChannel.appendLine('\n=== CodeShield Diagnostic Statistics ===');
+                this.outputChannel.appendLine('\n=== Shoonya Diagnostic Statistics ===');
                 this.outputChannel.appendLine(`Total secrets: ${stats.totalSecrets}`);
                 this.outputChannel.appendLine(`Files with secrets: ${stats.filesWithSecrets}`);
                 this.outputChannel.appendLine('\nSecrets by type:');

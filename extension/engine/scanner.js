@@ -1,5 +1,5 @@
 /**
- * CodeShield Scanner Module
+ * Shoonya Scanner Module
  * Detects known secrets using regular expression patterns
  */
 

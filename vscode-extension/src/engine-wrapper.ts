@@ -1,5 +1,5 @@
 /**
- * CodeShield Engine Wrapper
+ * Shoonya Engine Wrapper
  * TypeScript wrapper for existing JavaScript detection engine
  */
 
@@ -45,9 +45,9 @@ export interface CodeStats {
 }
 
 /**
- * Wrapper class for CodeShield engine functionality
+ * Wrapper class for Shoonya engine functionality
  */
-export class CodeShieldEngine {
+export class ShoonyaEngine {
     /**
      * Process text and detect/redact secrets
      * @param text The text to process
@@ -57,7 +57,7 @@ export class CodeShieldEngine {
         try {
             return processCode(text);
         } catch (error) {
-            console.error('CodeShield engine error:', error);
+            console.error('Shoonya engine error:', error);
             return {
                 secretsFound: [],
                 redactedCode: text,
@@ -81,7 +81,7 @@ export class CodeShieldEngine {
         try {
             return quickScan(text);
         } catch (error) {
-            console.error('CodeShield quick scan error:', error);
+            console.error('Shoonya quick scan error:', error);
             return [];
         }
     }
@@ -95,7 +95,7 @@ export class CodeShieldEngine {
         try {
             return getCodeStats(text);
         } catch (error) {
-            console.error('CodeShield stats error:', error);
+            console.error('Shoonya stats error:', error);
             return {
                 lineCount: text.split('\n').length,
                 characterCount: text.length,

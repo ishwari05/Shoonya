@@ -1,5 +1,5 @@
 /**
- * CodeShield Code Actions Provider
+ * Shoonya Code Actions Provider
  * Provides quick fix actions for detected secrets
  */
 
@@ -19,15 +19,15 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
     ): vscode.CodeAction[] {
         const actions: vscode.CodeAction[] = [];
 
-        // Only provide actions for CodeShield diagnostics
-        const codeshieldDiagnostics = context.diagnostics.filter(d => d.source === 'CodeShield');
+        // Only provide actions for Shoonya diagnostics
+        const shoonyaDiagnostics = context.diagnostics.filter(d => d.source === 'Shoonya');
         
-        if (codeshieldDiagnostics.length === 0) {
+        if (shoonyaDiagnostics.length === 0) {
             return actions;
         }
 
         // Create actions for each diagnostic
-        for (const diagnostic of codeshieldDiagnostics) {
+        for (const diagnostic of shoonyaDiagnostics) {
             if (diagnostic.range.contains(range)) {
                 const secret = this.extractSecretFromDiagnostic(diagnostic, document);
                 if (secret) {
@@ -41,10 +41,10 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
         }
 
         // Add bulk actions if multiple secrets are detected
-        if (codeshieldDiagnostics.length > 1) {
+        if (shoonyaDiagnostics.length > 1) {
             actions.push(
-                this.createRedactAllAction(codeshieldDiagnostics, document),
-                this.createIgnoreAllAction(codeshieldDiagnostics, document)
+                this.createRedactAllAction(shoonyaDiagnostics, document),
+                this.createIgnoreAllAction(shoonyaDiagnostics, document)
             );
         }
 
@@ -84,7 +84,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
         action.isPreferred = true;
         
         action.command = {
-            command: 'codeshield.redactSecrets',
+            command: 'shoonya.redactSecrets',
             title: 'Redact Secret',
             arguments: [secret]
         };
@@ -104,7 +104,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
         action.diagnostics = [];
         
         action.command = {
-            command: 'codeshield.ignoreSecret',
+            command: 'shoonya.ignoreSecret',
             title: 'Ignore Secret',
             arguments: [secret]
         };
@@ -124,7 +124,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
         action.diagnostics = [];
         
         action.command = {
-            command: 'codeshield.addToSafeList',
+            command: 'shoonya.addToSafeList',
             title: 'Add to Safe List',
             arguments: [secret]
         };
@@ -145,7 +145,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
         action.isPreferred = true;
         
         action.command = {
-            command: 'codeshield.redactSecrets',
+            command: 'shoonya.redactSecrets',
             title: 'Redact All Secrets'
         };
 
@@ -164,7 +164,7 @@ export class CodeActionProvider implements vscode.CodeActionProvider {
         action.diagnostics = diagnostics;
         
         action.command = {
-            command: 'codeshield.clearIgnored',
+            command: 'shoonya.clearIgnored',
             title: 'Ignore All Secrets'
         };
 

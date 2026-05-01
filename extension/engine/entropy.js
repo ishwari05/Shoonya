@@ -1,5 +1,5 @@
 /**
- * CodeShield Entropy Module
+ * Shoonya Entropy Module
  * Detects unknown secrets using Shannon entropy analysis
  */
 

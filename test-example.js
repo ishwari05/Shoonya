@@ -1,5 +1,5 @@
 /**
- * CodeShield Test Example
+ * Shoonya Test Example
  * Use this to test the detection engine
  */
 
@@ -17,7 +17,7 @@ const config = {
 console.log('Configuration loaded');
 `;
 
-console.log('🔍 Testing CodeShield Detection Engine\n');
+console.log('🔍 Testing Shoonya Detection Engine\n');
 
 const result = processCode(testCode);
 

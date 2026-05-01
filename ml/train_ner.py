@@ -1,5 +1,5 @@
 """
-train_ner.py — CodeShield NER Model Trainer
+train_ner.py — Shoonya NER Model Trainer
 
 Fine-tunes DistilBERT for token classification (NER) on the synthesized
 training data. Exports the final model as ONNX for in-browser inference.
@@ -242,7 +242,7 @@ def export_onnx(model, tokenizer, output_dir: Path, max_len: int, device):
     dummy_input_ids      = dummy_enc["input_ids"].to(device)
     dummy_attention_mask = dummy_enc["attention_mask"].to(device)
 
-    onnx_path = output_dir / "codeshield_ner.onnx"
+    onnx_path = output_dir / "shoonya_ner.onnx"
 
     torch.onnx.export(
         model,
@@ -268,7 +268,7 @@ def export_onnx(model, tokenizer, output_dir: Path, max_len: int, device):
 # ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="CodeShield NER Trainer")
+    parser = argparse.ArgumentParser(description="Shoonya NER Trainer")
     parser.add_argument("--data",        type=str, default="ml/training_data.jsonl")
     parser.add_argument("--epochs",      type=int, default=5)
     parser.add_argument("--batch-size",  type=int, default=32)

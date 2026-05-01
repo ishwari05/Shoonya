@@ -1,5 +1,5 @@
 /**
- * CodeShield Popup Script
+ * Shoonya Popup Script
  * Manages the extension popup interface
  */
 
@@ -411,7 +411,7 @@ class ShoonyaPopup {
 
   openHelp() {
     chrome.tabs.create({
-      url: 'https://github.com/ishwari05/codeshield-security#readme'
+      url: 'https://github.com/ishwari05/shoonya-security#readme'
     });
   }
 
@@ -427,7 +427,7 @@ class ShoonyaPopup {
         const url = URL.createObjectURL(blob);
         chrome.downloads.download({
           url: url,
-          filename: 'codeshield_feedback.json',
+          filename: 'shoonya_feedback.json',
           saveAs: true
         });
       } else {
@@ -441,7 +441,7 @@ class ShoonyaPopup {
 
   reportIssue() {
     chrome.tabs.create({
-      url: 'https://github.com/ishwari05/codeshield-security/issues/new'
+      url: 'https://github.com/ishwari05/shoonya-security/issues/new'
     });
   }
 

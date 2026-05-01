@@ -1,10 +1,10 @@
 /**
- * CodeShield Commands
+ * Shoonya Commands
  * Implements VS Code commands for secret management
  */
 
 import * as vscode from 'vscode';
-import { CodeShieldEngine, SecretDetection, ProcessResult } from './engine-wrapper';
+import { ShoonyaEngine, SecretDetection, ProcessResult } from './engine-wrapper';
 import { SecretDecorator } from './decorator';
 import { DiagnosticProvider } from './diagnostics';
 
@@ -20,18 +20,18 @@ export class CommandHandler {
     }
 
     /**
-     * Register all CodeShield commands
+     * Register all Shoonya commands
      */
     public registerCommands(): vscode.Disposable[] {
         const commands = [
-            vscode.commands.registerCommand('codeshield.redactSecrets', () => this.redactSecrets()),
-            vscode.commands.registerCommand('codeshield.scanDocument', () => this.scanDocument()),
-            vscode.commands.registerCommand('codeshield.quickRedact', () => this.quickRedact()),
-            vscode.commands.registerCommand('codeshield.ignoreSecret', (secret: SecretDetection) => this.ignoreSecret(secret)),
-            vscode.commands.registerCommand('codeshield.addToSafeList', (secret: SecretDetection) => this.addToSafeList(secret)),
-            vscode.commands.registerCommand('codeshield.showStats', () => this.showStats()),
-            vscode.commands.registerCommand('codeshield.clearIgnored', () => this.clearIgnored()),
-            vscode.commands.registerCommand('codeshield.clearSafeList', () => this.clearSafeList())
+            vscode.commands.registerCommand('shoonya.redactSecrets', () => this.redactSecrets()),
+            vscode.commands.registerCommand('shoonya.scanDocument', () => this.scanDocument()),
+            vscode.commands.registerCommand('shoonya.quickRedact', () => this.quickRedact()),
+            vscode.commands.registerCommand('shoonya.ignoreSecret', (secret: SecretDetection) => this.ignoreSecret(secret)),
+            vscode.commands.registerCommand('shoonya.addToSafeList', (secret: SecretDetection) => this.addToSafeList(secret)),
+            vscode.commands.registerCommand('shoonya.showStats', () => this.showStats()),
+            vscode.commands.registerCommand('shoonya.clearIgnored', () => this.clearIgnored()),
+            vscode.commands.registerCommand('shoonya.clearSafeList', () => this.clearSafeList())
         ];
         return commands;
     }
@@ -56,7 +56,7 @@ export class CommandHandler {
 
         try {
             // Process text with engine
-            const result = CodeShieldEngine.processText(text);
+            const result = ShoonyaEngine.processText(text);
             
             if (result.secretsFound.length === 0) {
                 vscode.window.showInformationMessage('No secrets found to redact');
@@ -139,7 +139,7 @@ export class CommandHandler {
 
         const document = activeEditor.document;
         try {
-            const result = CodeShieldEngine.processText(document.getText());
+            const result = ShoonyaEngine.processText(document.getText());
             
             if (result.secretsFound.length === 0) {
                 vscode.window.showInformationMessage('No secrets found to redact');
@@ -223,7 +223,7 @@ export class CommandHandler {
             const text = docToScan.getText();
             console.log('🔍 Scanning document with', text.length, 'characters');
             
-            const result = CodeShieldEngine.processText(text);
+            const result = ShoonyaEngine.processText(text);
             console.log('🔍 Found', result.secretsFound.length, 'secrets');
             
             if (result.secretsFound.length === 0) {
@@ -297,11 +297,11 @@ export class CommandHandler {
         }
 
         try {
-            const stats = CodeShieldEngine.getCodeStats(text);
-            const result = CodeShieldEngine.processText(text);
+            const stats = ShoonyaEngine.getCodeStats(text);
+            const result = ShoonyaEngine.processText(text);
             
             const message = `
-📊 CodeShield Statistics
+📊 Shoonya Statistics
 
 🔍 Detection Results:
    • Total Secrets Found: ${result.secretsFound.length}
@@ -457,7 +457,7 @@ export class CommandHandler {
      * Show detailed secret information
      */
     private async showSecretDetails(document: vscode.TextDocument): Promise<void> {
-        const result = CodeShieldEngine.processText(document.getText());
+        const result = ShoonyaEngine.processText(document.getText());
         
         if (result.secretsFound.length === 0) {
             vscode.window.showInformationMessage('No secrets found');
@@ -486,8 +486,8 @@ ${typeList}
 **Risk Assessment:** ${this.getRiskLevel(result.secretsFound.length)}
 
 **Next Steps:**
-• Use "CodeShield: Redact Secrets" to replace them
-• Use "CodeShield: Ignore Secret" to exclude specific ones
+• Use "Shoonya: Redact Secrets" to replace them
+• Use "Shoonya: Ignore Secret" to exclude specific ones
 • Check Settings to configure detection rules
         `.trim();
 

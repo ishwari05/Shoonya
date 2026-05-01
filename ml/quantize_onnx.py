@@ -3,8 +3,8 @@ from onnxruntime.quantization import quantize_dynamic, QuantType
 import os
 
 def shrink_model():
-    input_model_path = "extension/engine/models/codeshield_ner.onnx"
-    output_model_path = "extension/engine/models/codeshield_ner_quantized.onnx"
+    input_model_path = "extension/engine/models/shoonya_ner.onnx"
+    output_model_path = "extension/engine/models/shoonya_ner_quantized.onnx"
 
     print(f"Loading 253MB model: {input_model_path}...")
     

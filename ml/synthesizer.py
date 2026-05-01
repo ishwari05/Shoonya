@@ -1,5 +1,5 @@
 """
-synthesizer.py — CodeShield NER Training Data Generator
+synthesizer.py — Shoonya NER Training Data Generator
 
 Generates labeled training data for the NER (token classification) model.
 Each sample is a realistic code snippet with injected dummy secrets,
@@ -261,7 +261,7 @@ def print_stats(samples: list):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="CodeShield NER Training Data Synthesizer")
+    parser = argparse.ArgumentParser(description="Shoonya NER Training Data Synthesizer")
     parser.add_argument("--n", type=int, default=3000, help="Number of positive samples (default: 3000)")
     parser.add_argument("--neg-ratio", type=float, default=0.4, help="Ratio of negative to positive samples (default: 0.4)")
     parser.add_argument("--out", type=str, default="training_data.jsonl", help="Output file path")
